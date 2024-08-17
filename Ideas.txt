@@ -1,0 +1,16 @@
+Graphics
+---------
+* Making the bars "Joints"
+
+* Making the "Shrink" power-up as a weed stem (because it make the paper reap)
+
+* Making the "Grow" power-up as "raw king size" (the logo of "raw" with crowns on each side)
+
+* Making the ball looks like a head that jumps between the joints
+
+* Making the "Split" power-up to look like a lighter (because it makes you high and seeing two of you)
+  and high effect start on the screen with high music
+
+
+
+
