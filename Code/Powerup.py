@@ -2,7 +2,7 @@ import pygame
 import random
 import os
 from Ball import Ball
-from preferences import *
+from stats import *
 
 
 class Powerup:

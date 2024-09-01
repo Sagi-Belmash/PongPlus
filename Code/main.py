@@ -1,14 +1,58 @@
 import random
 import time
 import pygame
+import Ball
+import game
 from Ball import Ball
 from Score import Score
 from Player import Player
 from Powerup import Powerup
-from preferences import *
+from stats import *
 
 
-def game_over(score) -> bool:
+def draw(p1=None, p2=None, powerups=None,
+         s1=None, s2=None, balls=None, dots=False, start=False):
+    # Draw Screen
+    pygame.display.flip()
+    screen.blit(surface, (0, 0))
+    surface.fill(BLACK)
+    # Draw Players
+    if p1 is not None and p2 is not None:
+        pygame.draw.rect(screen, WHITE, p1.rect)
+        pygame.draw.rect(screen, WHITE, p2.rect)
+    # Draw Powerups
+    if powerups is not None:
+        for p in powerups:
+            screen.blit(p.image, (p.x, p.y))
+    # Draw Scores
+    if s1 is not None and s2 is not None:
+        surface.blit(s1.text, s1.rect)
+        surface.blit(s2.text, s2.rect)
+    # Draw Balls
+    if balls is not None:
+        for b in balls:
+            pygame.draw.circle(surface, b.color, (b.x, b.y), b.radius)
+    # Draw center line
+    if dots:
+        dx = SCREEN_WIDTH / 2
+        dy = SCREEN_HEIGHT
+        while dy > 0:
+            DOT_SIZE = 2
+            dot = pygame.rect.Rect(dx - DOT_SIZE / 2, dy, DOT_SIZE, DOT_SIZE)
+            pygame.draw.rect(screen, WHITE, dot)
+            dy -= 7
+    if start:
+        surface.blit(start_text, start_rect)
+
+
+def pause():
+    while True:
+
+        if pygame.key.get_pressed()[pygame.K_ESCAPE]:
+            break
+
+
+def hit(score) -> bool:
     score.increase_score()
     if score.score == MAX_POINTS:
         return True
@@ -16,35 +60,22 @@ def game_over(score) -> bool:
 
 
 def main():
-    pygame.init()
-    # Init screen
-    dt: float = 0
-    screen: pygame.display = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    surface: pygame.Surface = pygame.Surface(screen.get_size())
-    clock: pygame.time.Clock = pygame.time.Clock()
-    running: bool = True
-
-    active_powerups: list[Powerup] | None = None
-    # Start text
-    middle_screen_font = pygame.font.SysFont('ariel.ttf', 72)
-    start_text = middle_screen_font.render("Press ENTER to start the game", True, WHITE)
-    start_rect = start_text.get_rect()
-    start_rect.center = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
 
     # Score creating
     s1: Score = Score(1)
     s2: Score = Score(2)
     # Game run
+
+    running: bool = True
     focused = True
     start = False
 
+    active_powerups: list[Powerup] | None = None
     game_time = 0
     while running:
         # Start screen
         if not start:
-            pygame.display.flip()
-            screen.blit(surface, (0, 0))
-            surface.blit(start_text, start_rect)
+            draw(start=True)
             if pygame.key.get_pressed()[pygame.K_RETURN]:
                 start: bool = True
                 game_time: float = time.time() - 1
@@ -60,42 +91,27 @@ def main():
                 active_powerups = []
         # Game
         else:
+            dt = clock.tick(FPS) / 1000
             if focused:
-                pygame.display.flip()
-                screen.blit(surface, (0, 0))
-                surface.fill(BLACK)
-                # Draw center line
-                dx = SCREEN_WIDTH / 2
-                dy = SCREEN_HEIGHT
-                while dy > 0:
-                    DOT_SIZE = 2
-                    dot = pygame.rect.Rect(dx - DOT_SIZE / 2, dy, DOT_SIZE, DOT_SIZE)
-                    pygame.draw.rect(screen, WHITE, dot)
-                    dy -= 7
+                draw(p1, p2, active_powerups, s1, s2, balls, True)
 
-                # Draw players, text and power up
+                # Update players
                 p1.update()
                 p2.update()
-                for p in active_powerups:
-                    screen.blit(p.image, (p.x, p.y))
-                pygame.draw.rect(screen, WHITE, p1.rect)
-                pygame.draw.rect(screen, WHITE, p2.rect)
-                surface.blit(s1.text, s1.rect)
-                surface.blit(s2.text, s2.rect)
 
                 # Ball management
                 for b in balls:
                     b.update()
+                    # Check colling with players
                     if b.rect.colliderect(p1.rect):
                         b.x = p1.x + P_WIDTH + B_RADIUS
                     elif b.rect.colliderect(p2.rect):
                         b.x = p2.x - B_RADIUS
-                    pygame.draw.circle(surface, b.color, (b.x, b.y), B_RADIUS)
                     # Ball movement
                     b.move(dt if dt < 0.1 else 0)
                     if b.x + B_RADIUS >= SCREEN_WIDTH or b.x - B_RADIUS <= 0:
                         s = s1 if b.x + B_RADIUS >= SCREEN_WIDTH else s2
-                        if game_over(s):
+                        if hit(s):
                             # End text
                             end_text = (middle_screen_font
                                         .render(f"The winner is Player {1 if s1.score == MAX_POINTS else 2}!",
@@ -115,7 +131,6 @@ def main():
                             pygame.draw.rect(surface, WHITE, p2.rect)
                             surface.blit(s1.text, s1.rect)
                             surface.blit(s2.text, s2.rect)
-                            screen.blit(surface, (0, 0))
                             pygame.display.flip()
                             pygame.time.wait(3000)
                             surface.blit(fuck_u_text, fuck_u_rect)
@@ -125,8 +140,6 @@ def main():
                             s1.reset_score()
                             s2.reset_score()
                             start = False
-                            screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-                            surface = pygame.Surface(screen.get_size())
                         p1 = Player(1)
                         p2 = Player(2)
                         active_powerups = []
@@ -168,13 +181,16 @@ def main():
                     p2.move_left(dt)
                 if keys[pygame.K_RIGHT] and p2.x < SCREEN_WIDTH - P_WIDTH:
                     p2.move_right(dt)
+                if keys[pygame.K_ESCAPE]:
+                    pause()
 
-                dt = clock.tick(FPS) / 1000
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.ACTIVEEVENT:
                 focused = not focused
+
     pygame.quit()
 
 

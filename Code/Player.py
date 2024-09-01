@@ -1,6 +1,6 @@
 import time
 import pygame
-from preferences import *
+from stats import *
 
 
 class Player:

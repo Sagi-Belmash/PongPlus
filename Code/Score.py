@@ -1,5 +1,5 @@
 import pygame
-from preferences import *
+from stats import *
 
 
 class Score:

@@ -3,7 +3,7 @@ import math
 import random
 import pygame
 from Player import Player
-from preferences import *
+from stats import *
 
 
 class Ball:
